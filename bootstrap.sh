@@ -80,8 +80,8 @@ ENVEOF
   chmod 600 slskd.env
   echo "   slskd 凭据（请保存）: Soulseek=$SLSK_USER / $SLSK_PASS · WebUI=vj / $WEB_PASS · APIKey=$API_KEY"
 fi
-mkdir -p slskd-config downloads/soulseek
-chown 1000:1000 slskd-config downloads/soulseek 2>/dev/null || true
+mkdir -p slskd-config downloads/soulseek downloads/soulseek/.incomplete
+chown -R 1000:1000 slskd-config downloads/soulseek 2>/dev/null || true
 
 # 定时任务（幂等）：qb-config 备份 + 免密路径哨兵
 if command -v crontab >/dev/null 2>&1; then

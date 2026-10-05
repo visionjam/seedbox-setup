@@ -102,11 +102,12 @@ ENVEOF
   chmod 600 slskd.env
   echo "   slskd 凭据（请保存）: Soulseek=$SLSK_USER / $SLSK_PASS · WebUI=vj / $WEB_PASS · APIKey=$API_KEY"
 fi
-mkdir -p slskd-config downloads/soulseek
-chown 1000:1000 slskd-config downloads/soulseek 2>/dev/null || true
+mkdir -p slskd-config downloads/soulseek downloads/soulseek/.incomplete
+chown -R 1000:1000 slskd-config downloads/soulseek 2>/dev/null || true
 ```
 
 说明：Soulseek 用户名默认 `seedbox_<随机>`，想改名就改 `slskd.env` 后首次启动（README 已写明）；`umask 077` 包裹生成保证 600，结束后恢复。
+注意：`.incomplete` 目录必须**预建**——slskd 0.26.0 启动时校验其存在性，缺失即拒绝启动（2026-10-05 部署实测踩到）。
 
 - [ ] **Step 2: 语法检查**
 
