@@ -55,6 +55,34 @@ fi
 mkdir -p http-serve/secret-logs
 [ -f http-serve/secret-path.conf ] || : > http-serve/secret-path.conf
 
+# slskd（Soulseek）凭据与环境：首次生成并打屏一次（已存在则跳过）；模式同 .htpasswd
+if [ ! -f slskd.env ]; then
+  SLSK_USER="seedbox_$(openssl rand -hex 3)"
+  SLSK_PASS=$(openssl rand -hex 10)
+  WEB_PASS=$(openssl rand -hex 10)
+  API_KEY=$(openssl rand -hex 16)
+  umask 077
+  cat > slskd.env <<ENVEOF
+# slskd 配置与凭据（不进 git；随基线包迁移）
+SLSKD_SLSK_USERNAME=$SLSK_USER
+SLSKD_SLSK_PASSWORD=$SLSK_PASS
+SLSKD_USERNAME=vj
+SLSKD_PASSWORD=$WEB_PASS
+SLSKD_API_KEY=$API_KEY
+SLSKD_DOWNLOADS_DIR=/downloads/soulseek
+SLSKD_INCOMPLETE_DIR=/downloads/soulseek/.incomplete
+SLSKD_SHARED_DIR=/downloads/soulseek
+SLSKD_SLSK_LISTEN_PORT=50300
+SLSKD_HTTP_PORT=5030
+SLSKD_REMOTE_CONFIGURATION=true
+ENVEOF
+  umask 022
+  chmod 600 slskd.env
+  echo "   slskd 凭据（请保存）: Soulseek=$SLSK_USER / $SLSK_PASS · WebUI=vj / $WEB_PASS · APIKey=$API_KEY"
+fi
+mkdir -p slskd-config downloads/soulseek
+chown 1000:1000 slskd-config downloads/soulseek 2>/dev/null || true
+
 # 定时任务（幂等）：qb-config 备份 + 免密路径哨兵
 if command -v crontab >/dev/null 2>&1; then
   TMPC=$(mktemp)
