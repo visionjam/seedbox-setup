@@ -85,7 +85,7 @@ curl -x http://127.0.0.1:7890 -u 'files:<密码>' -C - -O 'http://<VPS_IP>:8899/
 - 手机订阅：装 ntfy App（Android：[binwiederhier/ntfy-android Releases](https://github.com/binwiederhier/ntfy-android/releases)；iOS：App Store）→ 添加服务器 `http://<VPS_IP>:8091` → 订阅主题（见 `ntfy-topic.txt`）
 - Android 必做三项：电池→**无限制**、允许**自启动**、后台**锁定**（否则 90% 概率收不到推送）；iOS 对自建服务器需配置经 ntfy.sh 的 APNs 转发（见 ntfy 官方文档）
 - **qB 完成钩子**：BT 种子下载完成自动推手机。脚本 `qb-config/hooks/torrent-finished.sh`（bootstrap 自动安装，主题随 qb-config 迁移）；启用：qB 设置 → 下载 → 「Run external program on torrent finished」填 `/bin/sh /config/hooks/torrent-finished.sh "%N"`（本栈部署时已由 API 启用，设置随 qb-config 备份恢复）
-- **slskd 看门狗**（`slskd-watchdog.py`，bootstrap 自动装 cron，每 2 分钟）：专辑完成 ✅ / 失败 ⚠️ / 整批完成 🎉 自动推手机；状态文件防重复推送，slskd 重启自动重基线
+- **slskd 看门狗**（`slskd-watchdog.py`，bootstrap 自动装 cron，每 2 分钟）：专辑完成 ✅ / 失败 ⚠️ / 整批完成 🎉 自动推手机；**上传动态 ⬆️**（有人从你这拉走文件时推送，含对方用户名）；状态文件防重复推送，slskd 重启自动重基线
 - **qB 做种率看门狗**（`qb-watchdog.py`，cron 每 5 分钟）：任一 BT 种子分享率达到目标（默认 **2.0**，或该种子自设的 ratio limit）→ 推手机 🎯（每种子一次；自测：`python3 qb-watchdog.py --test`）
 - **slskd 分享率账本**（`slskd-ratio-ledger.py`，cron 每 30 分钟）：跨重启累计 上传/下载 字节；**总体分享率达到 2.0 时推送并自动清理 `downloads/soulseek`**（清理前/后均会推手机；状态 `/root/slskd-ratio-state.json`，只清一次）
 - 安全：服务端无账号体系，主题名即凭据；疑似泄漏时换新主题：`echo "vj-$(openssl rand -hex 6)" > ntfy-topic.txt && docker compose restart ntfy`（然后手机改订阅新主题）

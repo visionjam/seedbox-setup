@@ -75,20 +75,33 @@ def load_state():
     return {'init': False, 'done': [], 'err': [], 'dirs_done': []}
 
 
-def save_state(done_keys, err_keys, full_dirs):
+def save_state(done_keys, err_keys, full_dirs, uploads=None):
     json.dump({'init': True, 'done': sorted(done_keys), 'err': sorted(err_keys),
-               'dirs_done': sorted(full_dirs)}, open(STATE, 'w'))
+               'dirs_done': sorted(full_dirs), 'uploads': sorted(uploads or [])}, open(STATE, 'w'))
 
 
 def main():
     try:
         entries = collect()
+        ups = []
+
+        def recup(x):
+            if isinstance(x, list):
+                for y in x:
+                    recup(y)
+            elif isinstance(x, dict):
+                if 'filename' in x and 'state' in x:
+                    ups.append(x)
+                for y in x.values():
+                    recup(y)
+
+        recup(api('/transfers/uploads'))
     except Exception as e:
         print('API 失败（跳过本轮）:', e)
         return
     st = load_state()
-    if not entries:
-        save_state([], [], [])
+    if not entries and not ups:
+        save_state([], [], [], [])
         print('无传输记录（可能已重启），静默重基线')
         return
     done, err, run = [], [], []
@@ -117,7 +130,7 @@ def main():
     prev_dirs = set(st.get('dirs_done') or [])
 
     if not st.get('init'):
-        notify('👁️ slskd 通知已启用。当前进度：%d/%d 完成，%d 进行中' % (len(done), len(entries), len(run)),
+        notify('👁️ slskd 通知已启用（下载里程碑 + 上传动态）。当前进度：%d/%d 完成，%d 进行中' % (len(done), len(entries), len(run)),
                'slskd')
     else:
         for d in sorted(full_dirs - prev_dirs):
@@ -131,8 +144,23 @@ def main():
             gb = sum((e.get('size') or 0) for e in done) / 2 ** 30
             notify('🎉 slskd 全部完成：%d 个文件 / %.2f GB' % (len(done), gb), 'slskd 完成')
 
-    save_state(done_keys, err_keys, full_dirs)
-    print('done=%d run=%d err=%d full_dirs=%d' % (len(done), len(run), len(err), len(full_dirs)))
+    up_done = [e for e in ups if ('Complet' in str(e.get('state'))) or ('Succeed' in str(e.get('state')))]
+    up_keys = {(e.get('username') or '') + '|' + (e.get('filename') or '') for e in up_done}
+    prev_up = set(st.get('uploads') or [])
+    if st.get('init') and ups:
+        new_up = [e for e in up_done
+                  if ((e.get('username') or '') + '|' + (e.get('filename') or '')) not in prev_up]
+        if len(new_up) == 1:
+            e0 = new_up[0]
+            bn = (e0.get('filename') or '').replace(chr(92), '/').split('/')[-1]
+            notify('⬆️ 有人拉走了：%s（来自 %s）' % (bn[:60], e0.get('username') or '?'), 'slskd 上传')
+        elif new_up:
+            users = {e.get('username') or '?' for e in new_up}
+            notify('⬆️ %d 个文件被拉走（来自 %d 位用户）' % (len(new_up), len(users)), 'slskd 上传')
+
+    save_state(done_keys, err_keys, full_dirs, up_keys)
+    print('done=%d run=%d err=%d full_dirs=%d uploads=%d'
+          % (len(done), len(run), len(err), len(full_dirs), len(up_done)))
 
 
 if __name__ == '__main__':
