@@ -59,6 +59,7 @@ curl -x http://127.0.0.1:7890 -u 'files:<密码>' -C - -O 'http://<VPS_IP>:8899/
 - **免密拉取路径（可选，推荐）**：`bash rotate-secret-path.sh` 生成一条随机路径（`http://<VPS_IP>:8899/<随机段>/`）——**URL 即凭据**，Gopeed/浏览器零配置直连（复制即用，无需插密码）；疑似泄漏时重跑该脚本即刻换新（旧路径作废）。片段文件 `http-serve/secret-path.conf` 含机密、不进 git，但**随基线包迁移**。
 - **访问哨兵**：`secret-sentinel.sh` 每日汇总免密路径访问来源（新 IP 标 ⚠️）→ `/root/secret-sentinel-digest.txt`；bootstrap 会自动装好两条 cron（备份 + 哨兵）。
 - 提示：中文文件名先下 ASCII 临时名再改名；长下载断流用 `-C -` 续传。
+- **线路会波动**：代理 / 直连谁快随时段翻转（实测出现过 30KB/s ↔ 2MB/s 的反转）；拉大文件前各测一次，批量拉回建议脚本化（4 并发 + `.part` 断点续传），中途换线无损、不重复下载。
 
 ## Soulseek（slskd）
 
@@ -123,6 +124,7 @@ cd .. && docker compose up -d --force-recreate qbittorrent
 - 反吸血：EE 内建屏蔽（迅雷/QQ/百度/Xfplay/DLBT、dt）+ `qb-config/qBittorrent/peer_blacklist.txt`（社区规则：anacrolix / dt / hp / xm / Gopeed-dev）；**放在 qBittorrent 子目录**（数据目录），改动后需重启 qB 生效，日志见 "contains N valid rules"；随 qb-config 备份与基线包迁移。
 - FileBrowser 已于 2026-09 停止维护，本栈不含它；文件回传见上方「文件回传」节（内置 8899 文件服务）。
 - 安全：试水期靠强密码即可；长期方案（SSH 隧道 / Tailscale）后续再加。
+- 重启自愈：全部容器 `restart: unless-stopped`、docker/cron 开机自启（bootstrap 安装）——2026-10-05 实测确认；显式停止过的容器与种子保持停止；slskd 在途传输队列重启会丢（已完成文件不受影响）。
 
 ## 安全模型与免责
 
