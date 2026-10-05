@@ -83,6 +83,26 @@ fi
 mkdir -p slskd-config downloads/soulseek downloads/soulseek/.incomplete
 chown -R 1000:1000 slskd-config downloads/soulseek 2>/dev/null || true
 
+# ntfy 通知：主题生成 + qB 完成钩子安装（幂等）
+if [ ! -f ntfy-topic.txt ]; then
+  echo "vj-$(openssl rand -hex 6)" > ntfy-topic.txt
+  chmod 600 ntfy-topic.txt
+  echo "   ntfy 主题（手机订阅用，请保存）: $(cat ntfy-topic.txt)"
+fi
+mkdir -p qb-config/hooks
+cp -f ntfy-topic.txt qb-config/ntfy-topic.txt
+cat > qb-config/hooks/torrent-finished.sh <<'HOOKEOF'
+#!/bin/sh
+# qB 下载完成钩子 → 手机推送（ntfy）。由 bootstrap 安装；主题随 qb-config 迁移。
+NAME="${1:-未知任务}"
+TOPIC=$(cat /config/ntfy-topic.txt 2>/dev/null)
+[ -z "$TOPIC" ] && exit 0
+curl -s -m 10 -d "✅ qB 下载完成：$NAME" "http://ntfy/$TOPIC" >/dev/null 2>&1
+exit 0
+HOOKEOF
+chmod +x qb-config/hooks/torrent-finished.sh
+chown -R 1000:1000 qb-config/hooks qb-config/ntfy-topic.txt 2>/dev/null || true
+
 # 定时任务（幂等）：qb-config 备份 + 免密路径哨兵
 if command -v crontab >/dev/null 2>&1; then
   TMPC=$(mktemp)
