@@ -71,6 +71,19 @@ curl -x http://127.0.0.1:7890 -u 'files:<密码>' -C - -O 'http://<VPS_IP>:8899/
 - API：请求头 `X-API-Key: <slskd.env 中的 SLSKD_API_KEY>`
 - 升级：改 compose 中 `slskd/slskd:<版本>` 后 `docker compose up -d slskd`
 
+## 手机通知（ntfy）
+
+自建 [ntfy](https://ntfy.sh)（轻量推送服务）把 VPS 事件推到手机——无需 Google 服务、无需第三方账号。
+
+- 服务端口：**8091**（宿主）；主题名存在 `ntfy-topic.txt`（600 权限，**主题名即密码**，不进 git、随基线包迁移与每日备份）
+- 发送消息（任何脚本一行）：
+  ```bash
+  curl -d "✅ 下载完成" "http://127.0.0.1:8091/$(cat /opt/seedbox-setup/ntfy-topic.txt)"
+  ```
+- 手机订阅：装 ntfy App（Android：[binwiederhier/ntfy-android Releases](https://github.com/binwiederhier/ntfy-android/releases)；iOS：App Store）→ 添加服务器 `http://<VPS_IP>:8091` → 订阅主题（见 `ntfy-topic.txt`）
+- Android 必做三项：电池→**无限制**、允许**自启动**、后台**锁定**（否则 90% 概率收不到推送）；iOS 对自建服务器需配置经 ntfy.sh 的 APNs 转发（见 ntfy 官方文档）
+- 安全：服务端无账号体系，主题名即凭据；疑似泄漏时换新主题：`echo "vj-$(openssl rand -hex 6)" > ntfy-topic.txt && docker compose restart ntfy`（然后手机改订阅新主题）
+
 ## 更新 EE 版本
 
 ```bash

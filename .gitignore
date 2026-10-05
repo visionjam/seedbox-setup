@@ -2,6 +2,8 @@
 qb-config/
 slskd-config/
 slskd.env
+ntfy-cache/
+ntfy-topic.txt
 downloads/
 
 # ===== 机密（凭据 / 免密路径） =====

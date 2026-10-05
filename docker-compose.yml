@@ -43,3 +43,13 @@ services:
     ports:
       - "8090:5030"        # WebUI（浏览器访问这个）
       - "50300:50300"      # Soulseek 监听口（公网可达）
+
+  ntfy:
+    image: binwiederhier/ntfy:v2.28.0
+    container_name: ntfy
+    restart: unless-stopped
+    command: serve --cache-file /var/cache/ntfy/cache.db
+    volumes:
+      - ./ntfy-cache:/var/cache/ntfy
+    ports:
+      - "8091:80"          # 手机推送服务（自建 ntfy；主题名即密码）

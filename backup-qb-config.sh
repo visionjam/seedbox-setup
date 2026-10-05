@@ -9,6 +9,7 @@ mkdir -p "$OUT"
 TARGETS=(qb-config)
 if [ -d "$DIR/slskd-config" ]; then TARGETS+=(slskd-config); fi
 if [ -f "$DIR/slskd.env" ]; then TARGETS+=(slskd.env); fi
+if [ -f "$DIR/ntfy-topic.txt" ]; then TARGETS+=(ntfy-topic.txt); fi
 tar czf "$OUT/qb-config-backup-$(date +%Y%m%d-%H%M).tgz" \
   --exclude='qb-config/GeoDB' --exclude='qb-config/qBittorrent/logs' \
   --exclude='slskd-config/logs' \
