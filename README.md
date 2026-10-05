@@ -83,6 +83,7 @@ curl -x http://127.0.0.1:7890 -u 'files:<密码>' -C - -O 'http://<VPS_IP>:8899/
 - 手机订阅：装 ntfy App（Android：[binwiederhier/ntfy-android Releases](https://github.com/binwiederhier/ntfy-android/releases)；iOS：App Store）→ 添加服务器 `http://<VPS_IP>:8091` → 订阅主题（见 `ntfy-topic.txt`）
 - Android 必做三项：电池→**无限制**、允许**自启动**、后台**锁定**（否则 90% 概率收不到推送）；iOS 对自建服务器需配置经 ntfy.sh 的 APNs 转发（见 ntfy 官方文档）
 - **qB 完成钩子**：BT 种子下载完成自动推手机。脚本 `qb-config/hooks/torrent-finished.sh`（bootstrap 自动安装，主题随 qb-config 迁移）；启用：qB 设置 → 下载 → 「Run external program on torrent finished」填 `/bin/sh /config/hooks/torrent-finished.sh "%N"`（本栈部署时已由 API 启用，设置随 qb-config 备份恢复）
+- **slskd 看门狗**（`slskd-watchdog.py`，bootstrap 自动装 cron，每 2 分钟）：专辑完成 ✅ / 失败 ⚠️ / 整批完成 🎉 自动推手机；状态文件防重复推送，slskd 重启自动重基线
 - 安全：服务端无账号体系，主题名即凭据；疑似泄漏时换新主题：`echo "vj-$(openssl rand -hex 6)" > ntfy-topic.txt && docker compose restart ntfy`（然后手机改订阅新主题）
 
 ## 更新 EE 版本
