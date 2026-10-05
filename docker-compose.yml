@@ -30,3 +30,16 @@ services:
       - ./http-serve/secret-logs:/var/log/secret                               # 免密路径专属日志（哨兵用，持久化）
     ports:
       - "8899:80"          # HTTP 文件服务（拉回用；支持 Range、basic auth）
+
+  slskd:
+    image: slskd/slskd:0.26.0
+    container_name: slskd
+    restart: unless-stopped
+    user: "1000:1000"
+    env_file: ./slskd.env
+    volumes:
+      - ./slskd-config:/app
+      - ./downloads:/downloads
+    ports:
+      - "8090:5030"        # WebUI（浏览器访问这个）
+      - "50300:50300"      # Soulseek 监听口（公网可达）
