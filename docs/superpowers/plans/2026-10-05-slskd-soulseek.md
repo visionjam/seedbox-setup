@@ -283,7 +283,7 @@ Expected: 出现登录/连接 Soulseek 的日志（含账号名）
 ```bash
 ssh root@<VPS_IP> 'bash -s' <<'EOF'
 cd /opt/seedbox-setup; K=$(grep SLSKD_API_KEY slskd.env | cut -d= -f2)
-# 如路径与预期不符，先校准：curl -s http://127.0.0.1:8090/swagger/v0/swagger.json | grep -o '"/api/v0/[^"]*"' | sort -u
+# 0.26.0 生产构建不提供 swagger；以下端点已实测确认；对端不可达时入队会报 500 → 换用户重试
 ID=$(curl -s -H "X-API-Key: $K" -H 'Content-Type: application/json' \
   -X POST http://127.0.0.1:8090/api/v0/searches -d '{"searchText":"Khalil Fong"}' \
   | python3 -c "import json,sys;print(json.load(sys.stdin)['id'])")
@@ -369,4 +369,28 @@ ssh root@<VPS_IP> "cd /opt && tar czf /tmp/seedbox-bundle-\$(date +%Y%m%d-%H%M).
 
 - **Spec 覆盖**：spec 变更清单 7 项 → Task 1-5/7；验收 8 条 → Task 6；安全 → Constraints + Task 4 Step 4；回滚 → Task 6 开头预案。无遗漏。
 - **占位符扫描**：唯一"待填"项为用户名（刻意不入公开文档，已注明"部署前商定"）；其余均为可执行命令与确切代码。
-- **一致性**：环境变量名、路径（`downloads/soulseek`）、服务名（`slskd`）、端口对（8090:5030 / 50300:50300）在全部任务中一致；API 路径以运行实例 swagger 为准（A4 内置校准命令）。
+- **一致性**：环境变量名、路径（`downloads/soulseek`）、服务名（`slskd`）、端口对（8090:5030 / 50300:50300）在全部任务中一致；API 路径已实测确认（见执行记录）。
+
+---
+
+## 执行记录（2026-10-05，全部落地）
+
+**验收结果**
+
+| 项 | 结果 |
+|---|---|
+| A1 容器与既有无损 | ✅ 三容器 Up，qB 进程无损 |
+| A2 WebUI 公网 | ✅ 200 |
+| A3 已连 Soulseek | ✅ `Logged in to the Soulseek server as <SLSK账号>` |
+| A4 搜索 | ✅ "Khalil Fong" 33 响应（含文件明细） |
+| A5 下载 + 拉回 | ✅ 实下 CC 小文件 `Completed, Succeeded`（223.7 KB/s），落盘 `downloads/soulseek/`，免密路径 Range **206** |
+| A6 监听口外部 | ✅ 50300 open（本机直连探测） |
+| A7 自愈 | ✅ 宿主机直杀容器进程模拟崩溃 → 15 秒内自动重启并重连 |
+| A8 备份 | ✅ 备份包含 25 个 slskd 条目（slskd-config/ + slskd.env） |
+
+**执行中发现（已修复/已记录）**
+
+1. `.incomplete` 目录必须预建（slskd 0.26.0 启动校验），bootstrap 已修复并回填本文档。
+2. `docker kill` 属显式停止，`unless-stopped` 按 Docker 设计**不**重启显式停止的容器；自愈的正确测试 = 杀主进程（崩溃语义）→ 实测 15 秒自愈。
+3. 0.26.0 生产构建无 swagger 端点；API 路径实测确认：`POST /api/v0/searches`、`GET /api/v0/searches/{id}?includeResponses=true`、`POST /api/v0/transfers/downloads/{username}`（JSON 体 `[{filename,size}]`）、`GET /api/v0/transfers/downloads/{username}`。
+4. 对端用户偶发不可达（直连/间接均失败），入队 API 返回 500 → 多用户重试策略（实测第二用户即通）。
