@@ -12,6 +12,7 @@
 - **文件回传**（8899）：Range 断点续传 + basic auth + 「URL 即凭据」免密随机路径
 - **访问哨兵**：免密路径被访问时每日汇总、新 IP 标 ⚠️
 - **每日备份**：qB 配置与种子清单自动打包（保留 7 份，含自动安全更新之外的兜底）
+- **Soulseek 音乐下载**（slskd）：WebUI 8090 搜索/下载；文件自动进 8899 拉回管道；只分享自下载目录
 
 ## 用法（VPS 上）
 
@@ -38,7 +39,9 @@ cd /opt/seedbox-setup && bash bootstrap.sh
 | `docker-compose.yml` | 服务定义（含 EE 二进制挂载行） |
 | `ee/qbittorrent-nox` | EE 官方静态二进制（bootstrap 自动下载；当前对应 EE release-5.2.4.10） |
 | `qb-config/` | qB 配置（**迁移时打包它**） |
-| `downloads/` | 下载 / 做种数据 |
+| `downloads/` | 下载 / 做种数据（含 slskd 的 downloads/soulseek/） |
+| `slskd-config/` | slskd 配置与状态（**迁移时打包它**） |
+| `slskd.env` | slskd 凭据（bootstrap 生成、打屏一次；不进 git） |
 | `http-serve/` | 文件服务配置（nginx；回传拉取用，8899，basic auth） |
 
 ## 文件回传（VPS → 本地）
@@ -56,6 +59,17 @@ curl -x http://127.0.0.1:7890 -u 'files:<密码>' -C - -O 'http://<VPS_IP>:8899/
 - **免密拉取路径（可选，推荐）**：`bash rotate-secret-path.sh` 生成一条随机路径（`http://<VPS_IP>:8899/<随机段>/`）——**URL 即凭据**，Gopeed/浏览器零配置直连（复制即用，无需插密码）；疑似泄漏时重跑该脚本即刻换新（旧路径作废）。片段文件 `http-serve/secret-path.conf` 含机密、不进 git，但**随基线包迁移**。
 - **访问哨兵**：`secret-sentinel.sh` 每日汇总免密路径访问来源（新 IP 标 ⚠️）→ `/root/secret-sentinel-digest.txt`；bootstrap 会自动装好两条 cron（备份 + 哨兵）。
 - 提示：中文文件名先下 ASCII 临时名再改名；长下载断流用 `-C -` 续传。
+
+## Soulseek（slskd）
+
+做种机同时跑 [slskd](https://github.com/slskd/slskd)（Soulseek 网络的无头客户端），主攻公开 BT 上难得的老资源与无损音乐。
+
+- WebUI：`http://<VPS_IP>:8090`（默认管理员 `vj`；密码在 `slskd.env`，首次 bootstrap 打屏一次）
+- Soulseek 监听口：`50300`（TCP，公网可达；账号首次启动时自动注册，默认 `seedbox_<随机>`，想改就改 `slskd.env`）
+- 下载落 `downloads/soulseek/`，自动出现在 8899 文件服务（basic auth 与免密路径均覆盖），拉回方式与 BT 完全一致
+- 分享 = 只分享 `downloads/soulseek/`：你下载的音乐自动回馈网络（Soulseek 的互惠文化：有分享才能从别人处下载）
+- API：请求头 `X-API-Key: <slskd.env 中的 SLSKD_API_KEY>`
+- 升级：改 compose 中 `slskd/slskd:<版本>` 后 `docker compose up -d slskd`
 
 ## 更新 EE 版本
 
@@ -98,6 +112,7 @@ cd .. && docker compose up -d --force-recreate qbittorrent
 
 - 取舍：WebUI / 文件服务 = **强随机密码 + 明文 HTTP**（试水期方案；密码由 `bootstrap.sh` 现场生成，不写死）；SSH 仅密钥登录；免密路径可随时轮换（`rotate-secret-path.sh`，旧路径即时作废）。**长期建议：WebUI/SSH 收进 Tailscale/WireGuard 等隧道，公网只保留做种端口。**
 - 本仓库刻意零凭据：`qb-config/`、`http-serve/.htpasswd`、`secret-path.conf`、`secret-logs/` 等运行时状态全部在 `.gitignore` 中；密码首次部署时生成并打屏一次。
+- slskd：WebUI 明文 HTTP + 强密码（与 8080/8899 同一权衡）；`slskd.env` 权限 600、不进仓库。
 - 本仓库只是自托管工具链；**请仅用于你有权下载与分享的内容**，使用风险自负。
 
 ## 许可
