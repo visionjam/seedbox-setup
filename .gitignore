@@ -1,0 +1,23 @@
+# ===== 运行时状态（绝不入库） =====
+qb-config/
+slskd-config/
+slskd.env
+downloads/
+
+# ===== 机密（凭据 / 免密路径） =====
+http-serve/.htpasswd
+http-serve/secret-path.conf
+http-serve/.secret-path
+http-serve/secret-logs/
+
+# ===== 二进制与生成物 =====
+ee/
+docker-compose.noee.yml
+backups/
+*.tgz
+*.log
+
+# ===== 系统杂物 =====
+.DS_Store
+Thumbs.db
+desktop.ini

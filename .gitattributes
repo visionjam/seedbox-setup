@@ -1,0 +1,2 @@
+# 强制 LF：脚本/配置部署到 Linux 时不受 Windows CRLF 影响（根治 $'\r' 报错）
+* text=auto eol=lf
