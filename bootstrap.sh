@@ -106,11 +106,12 @@ chown -R 1000:1000 qb-config/hooks qb-config/ntfy-topic.txt 2>/dev/null || true
 # 定时任务（幂等）：qb-config 备份 + 免密路径哨兵
 if command -v crontab >/dev/null 2>&1; then
   TMPC=$(mktemp)
-  crontab -l 2>/dev/null | grep -vE 'backup-qb-config\.sh|secret-sentinel\.sh|slskd-watchdog\.py|qb-watchdog\.py' > "$TMPC" || true
+  crontab -l 2>/dev/null | grep -vE 'backup-qb-config\.sh|secret-sentinel\.sh|slskd-watchdog\.py|qb-watchdog\.py|slskd-ratio-ledger\.py' > "$TMPC" || true
   [ -f backup-qb-config.sh ] && echo '17 4 * * * /opt/seedbox-setup/backup-qb-config.sh >> /var/log/qb-backup.log 2>&1' >> "$TMPC"
   [ -f secret-sentinel.sh ] && echo '23 4 * * * /opt/seedbox-setup/secret-sentinel.sh >> /var/log/secret-sentinel.log 2>&1' >> "$TMPC"
   [ -f slskd-watchdog.py ] && echo '*/2 * * * * /usr/bin/python3 /opt/seedbox-setup/slskd-watchdog.py >> /var/log/slskd-watchdog.log 2>&1' >> "$TMPC"
   [ -f qb-watchdog.py ] && echo '*/5 * * * * /usr/bin/python3 /opt/seedbox-setup/qb-watchdog.py >> /var/log/qb-watchdog.log 2>&1' >> "$TMPC"
+  [ -f slskd-ratio-ledger.py ] && echo '*/30 * * * * /usr/bin/python3 /opt/seedbox-setup/slskd-ratio-ledger.py >> /var/log/slskd-ratio-ledger.log 2>&1' >> "$TMPC"
   crontab "$TMPC"
   rm -f "$TMPC"
 fi
