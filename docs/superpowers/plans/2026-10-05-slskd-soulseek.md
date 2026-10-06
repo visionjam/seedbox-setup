@@ -394,3 +394,5 @@ ssh root@<VPS_IP> "cd /opt && tar czf /tmp/seedbox-bundle-\$(date +%Y%m%d-%H%M).
 2. `docker kill` 属显式停止，`unless-stopped` 按 Docker 设计**不**重启显式停止的容器；自愈的正确测试 = 杀主进程（崩溃语义）→ 实测 15 秒自愈。
 3. 0.26.0 生产构建无 swagger 端点；API 路径实测确认：`POST /api/v0/searches`、`GET /api/v0/searches/{id}?includeResponses=true`、`POST /api/v0/transfers/downloads/{username}`（JSON 体 `[{filename,size}]`）、`GET /api/v0/transfers/downloads/{username}`。
 4. 对端用户偶发不可达（直连/间接均失败），入队 API 返回 500 → 多用户重试策略（实测第二用户即通）。
+
+**附：整机 reboot 补测决定（2026-10-05）**——用户决定跳过；自愈已由崩溃实测覆盖，且与 qB/files 共用同一套 `unless-stopped` 机制。验收就此关门。

@@ -60,6 +60,9 @@ curl -x http://127.0.0.1:7890 -u 'files:<密码>' -C - -O 'http://<VPS_IP>:8899/
 - **访问哨兵**：`secret-sentinel.sh` 每日汇总免密路径访问来源（新 IP 标 ⚠️）→ `/root/secret-sentinel-digest.txt`；bootstrap 会自动装好两条 cron（备份 + 哨兵）。
 - 提示：中文文件名先下 ASCII 临时名再改名；长下载断流用 `-C -` 续传。
 - **线路会波动**：代理 / 直连谁快随时段翻转（实测出现过 30KB/s ↔ 2MB/s 的反转）；拉大文件前各测一次，批量拉回建议脚本化（4 并发 + `.part` 断点续传），中途换线无损、不重复下载。
+- **SSH/scp 也能走代理（2026-10-06 实测）**：Git Bash 自带 `connect.exe`，用 ProxyCommand 即可——
+  `scp -o "ProxyCommand=connect -H 127.0.0.1:7890 %h %p" root@<VPS_IP>:<路径> .`。
+  同次实测：**代理单流 ~1.9MB/s（直连单流 ~0.85 的 2.2 倍）；2~3 流聚合后两边都 ≈1.8-1.9MB/s**（节点并发受限，与"8 线程反降"一致）。适合无 8899 凭据时的直拉或单流补文件；批量多流两种线路耗时相近。
 
 ## Soulseek（slskd）
 
