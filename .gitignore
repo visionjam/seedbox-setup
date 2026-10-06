@@ -23,3 +23,7 @@ backups/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ===== Python 缓存 =====
+__pycache__/
+*.pyc
