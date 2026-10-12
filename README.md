@@ -73,6 +73,7 @@ curl -x http://127.0.0.1:7890 -u 'files:<密码>' -C - -O 'http://<VPS_IP>:8899/
 - 下载落 `downloads/soulseek/`，自动出现在 8899 文件服务（basic auth 与免密路径均覆盖），拉回方式与 BT 完全一致
 - 分享 = 只分享 `downloads/soulseek/`：你下载的音乐自动回馈网络（Soulseek 的互惠文化：有分享才能从别人处下载）
 - **分享索引每 60 分钟自动重扫**（`SLSKD_SHARE_CACHE_RETENTION=60`，最小 60）：slskd **默认不自动重扫**——不设的话新文件永远不会被分享出去（实测踩坑）；手动重扫：`curl -X PUT -H "X-API-Key: <key>" http://127.0.0.1:8090/api/v0/shares`
+- **资料与文件管理（2026-10-06）**：`SLSKD_SLSK_DESCRIPTION` 设置对全网可见的个人简介；`SLSKD_REMOTE_FILE_MANAGEMENT=true` 后 WebUI「System → Files」可浏览并**删除** slskd 下载目录（`downloads/soulseek/` 与 incomplete）内的文件，不用 SSH（删除类操作此前被开关拦截，列目录不受限）。两者均写在 `slskd.env`，改动后 `docker compose up -d slskd` 重建生效
 - API：请求头 `X-API-Key: <slskd.env 中的 SLSKD_API_KEY>`
 - 升级：改 compose 中 `slskd/slskd:<版本>` 后 `docker compose up -d slskd`
 
