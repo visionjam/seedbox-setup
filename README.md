@@ -43,6 +43,7 @@ cd /opt/seedbox-setup && bash bootstrap.sh
 | `slskd-config/` | slskd 配置与状态（**迁移时打包它**） |
 | `slskd.env` | slskd 凭据（bootstrap 生成、打屏一次；不进 git） |
 | `http-serve/` | 文件服务配置（nginx；回传拉取用，8899，basic auth） |
+| `make-bundle.sh` | 一键出全量基线包（换机迁移/备份；产物 `/root/seedbox-bundle-*.tgz`） |
 
 ## 文件回传（VPS → 本地）
 
@@ -108,6 +109,16 @@ cd .. && docker compose up -d --force-recreate qbittorrent
 
 **准备物**：本地基线包 `backups/seedbox-bundle-<日期>.tgz`（含全部配置、凭据、种子清单、EE 二进制）
 
+0. **旧机出包**（旧机还在时，一键）：`ssh root@<旧IP> 'bash /opt/seedbox-setup/make-bundle.sh'`
+   → 产物 `/root/seedbox-bundle-<时间>.tgz`（600 权限，**内含明文凭据**，注意保管）。拉回本机并两端比对
+   （Git Bash 走代理示例；直连去掉 `-o "ProxyCommand=…"` 段）：
+
+   ```bash
+   scp -o "ProxyCommand=connect -H 127.0.0.1:7890 %h %p" 'root@<旧IP>:/root/seedbox-bundle-<时间>.tgz' backups/
+   ssh root@<旧IP> 'sha256sum /root/seedbox-bundle-*.tgz'   # 与下一行结果比对，一致即包完整
+   sha256sum backups/seedbox-bundle-<时间>.tgz
+   ```
+
 1. **新机装公钥**（唯一需要密码的一次，二选一）
    - 面板 Console（VNC）登录后粘：
      `mkdir -p ~/.ssh && echo '<你的公钥>' >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys`
@@ -119,7 +130,14 @@ cd .. && docker compose up -d --force-recreate qbittorrent
 4. **数据**（二选一）
    - 常规：种子清单已恢复，数据从 swarm / 家里 qB 接力重新下载
    - 搬家：`ssh root@<旧机> 'tar czf - -C /opt/seedbox-setup downloads' | ssh root@<新IP> 'tar xzf - -C /opt/seedbox-setup'` → 全部「强制重新校验」
-5. **验证**：`http://<新IP>:8080`（原 qB 密码）✓ · `http://<新IP>:8899`（files / 原密码）✓ · `ssh root@<新IP>` 免密 ✓ → 确认无误后再销毁旧机
+5. **验收清单**（全过后再销毁旧机）：
+   - [ ] `http://<新IP>:8080` 能登录（原 qB 密码），种子列表已恢复（全部「强制重新校验」后转做种）
+   - [ ] `http://<新IP>:8899` 能登录（files / 原密码），抽一个文件开始下载（Range 断点续传正常）
+   - [ ] 做种口 `45012` 公网可达（check-host.net TCP 检测，或让家里 qB 手动牵线看到对端）
+   - [ ] slskd `http://<新IP>:8090` 能登录；`docker logs slskd | tail` 显示 50300 已连接
+   - [ ] 手机 ntfy：服务器地址改为 `<新IP>:8091` + 订阅原主题，能收到测试推送
+     （测试：`ssh root@<新IP> 'curl -d "测试" "http://127.0.0.1:8091/$(cat /opt/seedbox-setup/ntfy-topic.txt)"'`）
+   - [ ] `docker ps` 四个容器 Up（qbittorrent / files / slskd / ntfy）；`ssh root@<新IP>` 免密 OK
 
 **手工迁移（无基线包时）：** 新机 `scp -r seedbox-setup + bash bootstrap.sh` → 旧机 `qb-config/` 覆盖 → 种子全部「强制重新校验」→ 继续做种。
 
