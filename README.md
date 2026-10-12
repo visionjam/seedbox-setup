@@ -44,6 +44,7 @@ cd /opt/seedbox-setup && bash bootstrap.sh
 | `slskd.env` | slskd 凭据（bootstrap 生成、打屏一次；不进 git） |
 | `http-serve/` | 文件服务配置（nginx；回传拉取用，8899，basic auth） |
 | `make-bundle.sh` | 一键出全量基线包（换机迁移/备份；产物 `/root/seedbox-bundle-*.tgz`） |
+| `qb-status.sh` | 做种状态速查：种子总览 / 指定种子 tracker 明细 / DHT 节点数（验收与排障） |
 
 ## 文件回传（VPS → 本地）
 
@@ -133,7 +134,7 @@ cd .. && docker compose up -d --force-recreate qbittorrent
 5. **验收清单**（全过后再销毁旧机）：
    - [ ] `http://<新IP>:8080` 能登录（原 qB 密码），种子列表已恢复（全部「强制重新校验」后转做种）
    - [ ] `http://<新IP>:8899` 能登录（files / 原密码），抽一个文件开始下载（Range 断点续传正常）
-   - [ ] 做种口 `45012` 公网可达（check-host.net TCP 检测，或让家里 qB 手动牵线看到对端）
+   - [ ] 做种口 `45012` 公网可达（check-host.net TCP 检测，或让家里 qB 手动牵线看到对端）；`bash qb-status.sh <hash前8位>` 可看该种子 S/L 与 tracker 状态
    - [ ] slskd `http://<新IP>:8090` 能登录；`docker logs slskd | tail` 显示 50300 已连接
    - [ ] 手机 ntfy：服务器地址改为 `<新IP>:8091` + 订阅原主题，能收到测试推送
      （测试：`ssh root@<新IP> 'curl -d "测试" "http://127.0.0.1:8091/$(cat /opt/seedbox-setup/ntfy-topic.txt)"'`）
